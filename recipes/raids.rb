@@ -30,6 +30,7 @@ node[:ebs][:raids].each do |device, options|
       aws_ebs_volume mount do
         aws_access_key credentials[node.ebs.creds.aki]
         aws_secret_access_key credentials[node.ebs.creds.sak]
+	delete_on_termination node[:ebs][:delete_on_termination]
         size options[:disk_size]
         device mount
         availability_zone node[:ec2][:placement_availability_zone]
@@ -151,5 +152,6 @@ node[:ebs][:raids].each do |raid_device, options|
     mode 0755
     owner 'root'
     group 'root'
+    manage_symlink_source true
   end
 end
