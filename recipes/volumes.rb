@@ -19,11 +19,12 @@ node[:ebs][:volumes].each do |mount_point, options|
     vol = aws_ebs_volume device do
       aws_access_key credentials[node.ebs.creds.aki]
       aws_secret_access_key credentials[node.ebs.creds.sak]
+      delete_on_termination node[:ebs][:delete_on_termination]
+      piops options[:piops]
       size options[:size]
       device device
       availability_zone node[:ec2][:placement_availability_zone]
       volume_type options[:piops] ? 'io1' : 'standard'
-      piops options[:piops]
       action :nothing
     end
     vol.run_action(:create)
