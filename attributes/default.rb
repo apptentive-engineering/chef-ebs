@@ -10,6 +10,7 @@ default[:ebs][:md_read_ahead] = '65536' # 64k
 default[:ebs][:initrd_md5] = ''
 default[:ebs][:volume_type] = 'standard' # or gp2 for SSD disks by default (more expensive)
 default[:ebs][:encrypted] = false
+default[:ebs][:use_iam] = false
 
 if BlockDevice.on_kvm? && ebs[:devices]
   Chef::Log.info("Running on QEMU/KVM: Need to translate device names as KVM allocates them regardless of the given device ID")

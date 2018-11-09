@@ -8,10 +8,12 @@ execute "Load device mapper kernel module" do
   ignore_failure true
 end
 
-if node[:ebs][:creds][:encrypted]
-  credentials = Chef::EncryptedDataBagItem.load(node[:ebs][:creds][:databag], node[:ebs][:creds][:item])
-else
-  credentials = data_bag_item node[:ebs][:creds][:databag], node[:ebs][:creds][:item]
+unless node[:ebs][:use_iam]
+  if node[:ebs][:creds][:encrypted]
+    credentials = Chef::EncryptedDataBagItem.load(node[:ebs][:creds][:databag], node[:ebs][:creds][:item])
+  else
+    credentials = data_bag_item node[:ebs][:creds][:databag], node[:ebs][:creds][:item]
+  end
 end
 
 node[:ebs][:raids].each do |device, options|
@@ -36,8 +38,8 @@ node[:ebs][:raids].each do |device, options|
                     end
 
       aws_ebs_volume mount do
-        aws_access_key credentials[node.ebs.creds.aki]
-        aws_secret_access_key credentials[node.ebs.creds.sak]
+        aws_access_key credentials[node.ebs.creds.aki] unless node[:ebs][:use_iam]
+        aws_secret_access_key credentials[node.ebs.creds.sak] unless node[:ebs][:use_iam]
         size options[:disk_size]
         device mount
         availability_zone node[:ec2][:placement_availability_zone]
