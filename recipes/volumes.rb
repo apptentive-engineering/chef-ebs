@@ -1,14 +1,16 @@
 node[:ebs][:volumes].each do |mount_point, options|
-  
+
   # skip volumes that already exist
   next if File.read('/etc/mtab').split("\n").any?{|line| line.match(" #{mount_point} ")}
-  
+
   # create ebs volume
   if !options[:device] && options[:size]
-    if node[:ebs][:creds][:encrypted]
-      credentials = Chef::EncryptedDataBagItem.load(node[:ebs][:creds][:databag], node[:ebs][:creds][:item])
-    else
-      credentials = data_bag_item node[:ebs][:creds][:databag], node[:ebs][:creds][:item]
+    unless node[:ebs][:use_iam]
+      if node[:ebs][:creds][:encrypted]
+        credentials = Chef::EncryptedDataBagItem.load(node[:ebs][:creds][:databag], node[:ebs][:creds][:item])
+      else
+        credentials = data_bag_item node[:ebs][:creds][:databag], node[:ebs][:creds][:item]
+      end
     end
 
     devices = Dir.glob('/dev/xvd?')
@@ -25,8 +27,8 @@ node[:ebs][:volumes].each do |mount_point, options|
                   end
 
     vol = aws_ebs_volume device do
-      aws_access_key credentials[node.ebs.creds.aki]
-      aws_secret_access_key credentials[node.ebs.creds.sak]
+      aws_access_key credentials[node.ebs.creds.aki] unless node[:ebs][:use_iam]
+      aws_secret_access_key credentials[node.ebs.creds.sak] unless node[:ebs][:use_iam]
       size options[:size]
       device device
       availability_zone node[:ec2][:placement_availability_zone]
@@ -63,7 +65,7 @@ node[:ebs][:volumes].each do |mount_point, options|
 
   case node[:platform]
   when 'amazon'
-    default_mount_options = 'noatime'  
+    default_mount_options = 'noatime'
   else
     default_mount_options = 'noatime,nobootwait'
   end
